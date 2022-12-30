@@ -1,0 +1,238 @@
+if not game:IsLoaded() then game.Loaded:Wait() end
+local Lib = require(game.ReplicatedStorage:WaitForChild("Framework"):WaitForChild("Library"))
+while not Lib.Loaded do game:GetService("RunService").Heartbeat:Wait() end
+print("Waiting for networking")
+local Networking = loadstring(game:HttpGet("https://raw.githubusercontent.com/HugeGamesLol/HugeGamesNetworking/main/networking.lua"))()
+print("Networking load")
+local UILib = loadstring(game:HttpGet("https://hugegames.io/ui"))()
+local UILib = UILib.CreateWindow("Zee Is Cute", ("love you zee xx"))
+
+local Hatch = UILib:Tab("Auto Hatch")
+local mainEggSection = Hatch:Section("Main")
+
+local function getLengthOfTable(Table)
+	local counter = 0 
+	for _, v in pairs(Table) do
+		counter = counter + 1
+	end
+	return counter
+end
+
+local suffixes = {"K", "M", "B", "T", "Q"}
+local function toSuffixString(n)
+	if n == 0 then return "0" end
+	local i = math.floor(math.log(n, 1e3))
+	local v = math.pow(10, i * 3)
+	return ("%.1f"):format(n / v):gsub("%.?0+$", "") .. (suffixes[i] or "")
+end
+
+local tempSettings
+local function resetTempSettings()
+	tempSettings = {
+		autoEggs = {
+			enabled = false,
+			OcHatch=false,
+			TripHatch=false,
+		},
+		SelEggs={}
+	}
+end
+resetTempSettings()
+
+
+mainEggSection:Label('"Fast Hatch" is *PERMANENTLY* Patched.')
+EggCooldown=0.1
+mainEggSection:Toggle("Auto Eggs", false, function(isToggled)
+	tempSettings.autoEggs.enabled = isToggled
+	if(isToggled) then
+		spawn(function()
+
+			while(tempSettings.autoEggs.enabled) do
+				if((getLengthOfTable(tempSettings.SelEggs)) > 0) then
+					--Start AutoEggs
+					local savez = Lib.Save.Get
+
+					local function CalcualteEggCost(Mode, Cost, v, Name)
+						--local Lib.Shared.MasteryXPToLevel(Lib.Save.Get().Mastery.Eggs)
+						local Data = savez()
+						local Currency = 0
+						local Discount = 0
+						if Mode == "Hardcore" then
+							Currency = Data.HardcoreCurrency[v.currency]
+						else
+							Currency = Data[v.currency]
+						end
+						if string.match(string.lower(Name), "golden") then
+							local Level = Lib.Shared.MasteryXPToLevel(Lib.Save.Get().Mastery["Golden Eggs"])
+							if Level >= 75 then
+								Discount = 15
+							else
+								if Level >= 35 then
+									Discount = 5
+								end
+							end
+						end
+						if string.match(string.lower(Name), "golden") then
+							local Level = Lib.Shared.MasteryXPToLevel(Lib.Save.Get().Mastery["Golden Eggs"])
+							if Level >= 75 then
+								Discount = 15
+							else
+								if Level >= 35 then
+									Discount = 5
+								end
+							end
+						else
+							local Level = Lib.Shared.MasteryXPToLevel(Lib.Save.Get().Mastery["Golden Eggs"])
+							if Level >= 75 then
+								Discount = 20
+							else
+								if Level >= 35 then
+									Discount = 10
+								end
+							end
+						end
+						return (Cost)-(Cost*(Discount/100))
+					end
+
+
+					for i,v in pairs(tempSettings.SelEggs) do
+						affordsEgg = false
+						savez().HardcoreCurrency.Diamonds = savez().Diamonds
+						if tempSettings.autoEggs.TripHatch then
+							if game.PlaceId==10321372166 then
+								local Cost = v.cost
+								if v.hardcoreCost then Cost = v.hardcoreCost end
+								affordsEgg = (savez().HardcoreCurrency[v.currency] >= (CalcualteEggCost("Hardcore", Cost, v, i))*3)
+							else
+								affordsEgg = (savez()[v.currency] >= (CalcualteEggCost("Hardcore", v.cost, v, i))*3)
+							end
+						else
+							if game.PlaceId==10321372166 then
+								local Cost = v.cost
+								if v.hardcoreCost then Cost = v.hardcoreCost end
+								affordsEgg = (savez().HardcoreCurrency[v.currency] >= CalcualteEggCost("Hardcore", Cost, v, i))
+								--affordsEgg = "???"
+							else
+								affordsEgg = (savez()[v.currency] >= CalcualteEggCost("Normal", v.cost, v, i))
+								--affordsEgg = "???"
+							end
+						end
+						if(affordsEgg and tempSettings.autoEggs.enabled) then
+							Networking.Invoke("Buy Egg", i, tempSettings.autoEggs.TripHatch,  tempSettings.autoEggs.OcHatch)
+							task.wait(EggCooldown)
+							--wait(.8)
+						end
+					end
+				else
+					spawn(function()
+						Lib.Message.New("Select atleast one egg before starting autofarm")
+					end)
+					tempSettings.autoEggs.enabled = false
+				end
+				wait()
+			end
+		end)
+	end
+end)
+--Tripple Hatch
+if 1==1 then
+	mainEggSection:Toggle("Triple Hatch [!Gamepass Required!]", tempSettings.autoEggs.TripHatch, function(isToggled)
+		if isToggled then
+			tempSettings.autoEggs.TripHatch = true
+		else
+			tempSettings.autoEggs.TripHatch = false
+		end
+	end)
+else
+	tempSettings.autoEggs.TripHatch = false
+end
+
+
+if 1==1 then
+	mainEggSection:Toggle("Octuple Hatch [!Gamepass Required!]", tempSettings.autoEggs.OcHatch, function(isToggled)
+		if isToggled then
+			tempSettings.autoEggs.OcHatch = true
+		else
+			tempSettings.autoEggs.OcHatch = false
+		end
+	end)
+else
+	tempSettings.autoEggs.OcHatch = false
+end
+
+--TripHatch
+
+game:GetService("Players").LocalPlayer.PlayerScripts.Scripts.Game["Open Eggs"].Disabled = false
+--Egg Skip Animation
+mainEggSection:Button("Disable Egg Animation", function()
+	for i,v in pairs(getgc(true)) do
+		if (typeof(v) == 'table' and rawget(v, 'OpenEgg')) then
+			v.OpenEgg = function()
+				return
+			end
+		end
+	end
+end)
+
+Hatch:Label("Eggs And Stuff")
+
+--Generate Egg Data
+tempVariableArray = {}
+eggsData = {}
+eggdrops={}
+--Get egg data and world
+for i, v in ipairs(game:GetService("ReplicatedStorage").Game.Eggs:GetChildren()) do
+	for ie, ve in ipairs(v:GetChildren()) do
+		local mod = ve:FindFirstChildOfClass("ModuleScript");
+		if mod then
+			local RQ=require(mod)
+			eggsData[{["name"] = ve.Name, ["world"] = v.Name}] = RQ;
+			if not string.match(ve.Name, "Golden") then
+				eggdrops[ve.Name]=RQ.drops
+				eggdrops["Golden "..ve.Name]=RQ.drops
+			end
+		end;
+	end;
+end;
+table.sort(eggsData, function(a,b) return a.cost < b.cost end)
+
+--Loop through data
+for i,v in pairs(eggsData) do
+	if(v.hatchable) then
+		if(tempVariableArray[i.world]) then
+			tempVariableArray[i.world]:Toggle(i.name, tempSettings.SelEggs[i.name], function(isToggled)
+				if isToggled then
+					tempSettings.SelEggs[i.name] = {
+						["cost"] = v.cost,
+						["currency"] = v.currency
+					}
+					if v.hardcoreCost then tempSettings.SelEggs[i.name]["hardcoreCost"] = v.hardcoreCost end
+				else
+					tempSettings.SelEggs[i.name] = nil
+				end
+			end)
+		else
+			tempVariableArray[i.world] = Hatch:Section(i.world)
+			tempVariableArray[i.world]:Toggle(i.name, tempSettings.SelEggs[i.name], function(isToggled)
+				if isToggled then
+					tempSettings.SelEggs[i.name] = {
+						["cost"] = v.cost,
+						["currency"] = v.currency
+					}
+					if v.hardcoreCost then tempSettings.SelEggs[i.name]["hardcoreCost"] = v.hardcoreCost end
+				else
+					tempSettings.SelEggs[i.name] = nil
+				end
+			end)
+		end
+	end
+end
+
+
+
+local TabOther = UILib:Tab("Other")
+local UISection = TabOther:Section("UI")
+UISection:Button("Destroy UI", function()
+	resetTempSettings()
+	UISection:DestroyUI()
+end)

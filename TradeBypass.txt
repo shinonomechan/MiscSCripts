@@ -1,0 +1,14 @@
+local UILib = loadstring(game:HttpGet("http://hugegames.io/ui"))()
+local UILib = UILib.CreateWindow("NattFunnyTrade", ("BypassEz"))
+
+local IGotLazy=UILib:Tab("Trade")
+local Sec=IGotLazy:Section("Players")
+for i,v in pairs(game.Players:GetChildren()) do
+	Sec:Button("Trade "..v.Name, function()
+		game:GetService("ReplicatedStorage").Events.SendTradeRequest:FireServer(v)
+	end)
+end
+local Sec=IGotLazy:Section("UiGoBoom")
+Sec:Button("Destroy UI", function()
+	Sec:DestroyUI()
+end)
